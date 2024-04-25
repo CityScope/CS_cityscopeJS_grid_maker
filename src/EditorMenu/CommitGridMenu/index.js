@@ -4,19 +4,30 @@ import { GridEditorSettings } from "../../settings/settings";
 import { Typography, List, ListItem } from "@mui/material";
 import Link from "@mui/material/Link";
 import LoadingButton from "@mui/lab/LoadingButton";
+import Alert from "@mui/material/Alert";
 
-const reqResponseUI = (tableName) => {
-  let cityscopeJSendpoint =
-    "https://cityscope.media.mit.edu/CS_cityscopeJS/?cityscope=" + tableName;
-  // create the feedback text
-  let resText = (
-    <Typography color="textPrimary" variant="caption">
-      Grid deployed to{" "}
-      <Link color="textSecondary" href={cityscopeJSendpoint}>
-        {cityscopeJSendpoint}
-      </Link>
-    </Typography>
-  );
+const reqResponseUI = (isError, payload) => {
+  let resText = null;
+  if (isError) {
+    resText = (
+      <Alert variant="outlined" severity="error">
+        Error: {payload}
+      </Alert>
+    );
+  } else {
+    let cityscopeJSendpoint =
+      "https://cityscope.media.mit.edu/CS_cityscopeJS/?cityscope=" + payload;
+    // create the feedback text
+    resText = (
+      <Alert variant="outlined" severity="success">
+        Grid deployed to{" "}
+        <Link color="textSecondary" href={cityscopeJSendpoint}>
+          {cityscopeJSendpoint}
+        </Link>
+      </Alert>
+    );
+  }
+
   return resText;
 };
 
@@ -118,10 +129,11 @@ export default function CommitGridMenu(props) {
         throw new Error("Error creating table");
       }
       const result = await response.json();
-      setReqResponse(reqResponseUI(tableName));
+      setReqResponse(reqResponseUI(false, tableName));
       return result;
     } catch (error) {
-      console.error(error.message);
+      console.error("error", error.message);
+      setReqResponse(reqResponseUI(true, error.message.toString()));
     }
   };
 
@@ -130,13 +142,12 @@ export default function CommitGridMenu(props) {
       <ListItem>
         <Typography variant="h4">Upload Grid to cityIO</Typography>
       </ListItem>
-
-      <div> {reqResponse}</div>
-
+      {reqResponse ? reqResponse : null}
       {generatedGridBool && (
         <>
           <LoadingButton
             onClick={() => {
+              setReqResponse();
               setLoading(true);
               new Promise((resolve) => {
                 setTimeout(() => {
